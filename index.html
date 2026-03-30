@@ -233,7 +233,6 @@
       <a href="#home"     class="nav-link">Home</a>
       <a href="#history"  class="nav-link">History</a>
       <a href="#impact"   class="nav-link">Impact</a>
-      <a href="#events"   class="nav-link">Events</a>
       <a href="#donation" class="nav-link">Donate</a>
       <a href="#grant"    class="nav-link">Grant Request</a>
     </nav>
@@ -314,7 +313,7 @@
     <input type="tel"    placeholder="Organization Phone Number" required>
     <input type="text"   placeholder="Tax ID / EIN"            required>
     <input type="text"   placeholder="Project Title"           required>
-    <input type="number" placeholder="Cash Amount Requested ($)" required>
+    <input type="number" placeholder="Cash Amount Requested ($)" min="0" step="1000" value="0" required>
     <button type="submit">Submit Application</button>
   </form>
   <p id="grantMessage"></p>
@@ -323,9 +322,12 @@
 <section id="donation" class="section">
   <h2>Donation Form</h2>
   <form id="donationForm">
-    <input type="text"   id="donorName"      placeholder="Full Name"          required>
-    <input type="email"                       placeholder="Email Address"       required>
-    <input type="number" id="donationAmount" placeholder="Donation Amount ($)" required>
+    <input type="text"   placeholder="Organization Name"         required>
+    <input type="text"   placeholder="Organization Address"      required>
+    <input type="text"   placeholder="Contact Name"              required>
+    <input type="tel"    placeholder="Organization Phone Number" required>
+    <input type="text"   placeholder="Tax ID / EIN"              required>
+    <input type="number" placeholder="Donation Amount ($)" min="0" step="1000" value="0" required>
     <button type="submit">Submit Donation</button>
   </form>
   <p id="donationMessage"></p>
@@ -374,16 +376,14 @@
 
 <script src="mondayAPI.js"></script>
 <script src="main.js"></script>
-<script src="mondayAPI.js"></script>
-<script src="main.js"></script>
 <script>
 // ── BREWERS SCORE WIDGET (MLB Stats API) ────────────────────────
 (function() {
-  var BREWERS_ID  = 158; // Milwaukee Brewers — MLB Stats API ID
-  var isOpen      = false;
-  var gameData    = null;
-  var recentGames = [];
-  var record      = null;
+  var BREWERS_ID   = 158;
+  var isOpen       = false;
+  var gameData     = null;
+  var recentGames  = [];
+  var record       = null;
   var refreshTimer = null;
 
   window.togglePopup = function() {
@@ -395,39 +395,30 @@
     var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
-
   function dateOffset(base, days) {
     var d = new Date(base + 'T12:00:00');
     d.setDate(d.getDate() + days);
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
-
   function formatTime(iso) {
     return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
   }
-
   function formatDate(iso) {
     return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
-
   function shortDate(iso) {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
-
   function getStatus(game) {
     var s = (game && game.status && game.status.abstractGameState) || 'Preview';
     if (s === 'Final') return 'final';
     if (s === 'Live')  return 'live';
     return 'upcoming';
   }
-
   function getTeams(game) {
     var isHome = !!(game.teams && game.teams.home && game.teams.home.team && game.teams.home.team.id === BREWERS_ID);
-    return { brew: isHome ? game.teams.home : game.teams.away,
-             opp:  isHome ? game.teams.away : game.teams.home,
-             isHome: isHome };
+    return { brew: isHome ? game.teams.home : game.teams.away, opp: isHome ? game.teams.away : game.teams.home, isHome: isHome };
   }
-
   function updateLiveRing() {
     var ring = document.getElementById('live-ring');
     if (ring) ring.classList.toggle('active', !!(gameData && getStatus(gameData) === 'live'));
@@ -438,7 +429,6 @@
     var footer = document.getElementById('popup-footer');
     var dateEl = document.getElementById('popup-date');
     if (!body) return;
-
     var now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     if (footer) footer.textContent = 'Updated ' + now + ' \u00b7 refreshes every 60s';
 
@@ -457,18 +447,16 @@
       recentGames.map(function(g) {
         var t = getTeams(g);
         if (!t.brew || !t.opp) return '';
-        var milS    = t.brew.score || 0;
-        var oppS    = t.opp.score  || 0;
-        var won     = t.brew.isWinner === true;
-        var ha      = t.isHome ? 'vs' : '@';
-        var oppAbbr = (t.opp.team && t.opp.team.abbreviation) || '???';
+        var won = t.brew.isWinner === true;
+        var ha  = t.isHome ? 'vs' : '@';
+        var oAbbr = (t.opp.team && t.opp.team.abbreviation) || '???';
         return '<div class="recent-game">' +
           '<div class="recent-left">' +
             '<div class="wl-badge ' + (won?'W':'L') + '">' + (won?'W':'L') + '</div>' +
-            '<div class="recent-opp">' + ha + ' <span>' + oppAbbr + '</span></div>' +
+            '<div class="recent-opp">' + ha + ' <span>' + oAbbr + '</span></div>' +
           '</div>' +
           '<div style="text-align:right">' +
-            '<div class="recent-score">' + milS + '\u2013' + oppS + '</div>' +
+            '<div class="recent-score">' + (t.brew.score||0) + '\u2013' + (t.opp.score||0) + '</div>' +
             '<div class="recent-date">' + shortDate(g.gameDate) + '</div>' +
           '</div>' +
         '</div>';
@@ -481,23 +469,23 @@
       return;
     }
 
-    var status  = getStatus(gameData);
-    var t       = getTeams(gameData);
-    var brewScore  = (t.brew && t.brew.score != null) ? t.brew.score : null;
-    var oppScore   = (t.opp  && t.opp.score  != null) ? t.opp.score  : null;
-    var oppAbbr    = (t.opp && t.opp.team && t.opp.team.abbreviation) || '???';
-    var oppName    = ((t.opp && t.opp.team && (t.opp.team.teamName || t.opp.team.name)) || '').split(' ').pop();
+    var status    = getStatus(gameData);
+    var t         = getTeams(gameData);
+    var brewScore = (t.brew && t.brew.score != null) ? t.brew.score : null;
+    var oppScore  = (t.opp  && t.opp.score  != null) ? t.opp.score  : null;
+    var oppAbbr   = (t.opp && t.opp.team && t.opp.team.abbreviation) || '???';
+    var oppName   = ((t.opp && t.opp.team && (t.opp.team.teamName || t.opp.team.name)) || '').split(' ').pop();
     var showScores = status !== 'upcoming';
-    var brewWin    = t.brew && t.brew.isWinner === true;
-    var oppWin     = t.opp  && t.opp.isWinner  === true;
+    var brewWin   = t.brew && t.brew.isWinner === true;
+    var oppWin    = t.opp  && t.opp.isWinner  === true;
 
     var pillClass = 'upcoming', pillText = gameData.gameDate ? formatTime(gameData.gameDate) : 'TBD', liveDotHtml = '';
     if (status === 'final') { pillClass = 'final'; pillText = 'Final'; }
     if (status === 'live') {
       pillClass = 'live';
-      var ls    = gameData.linescore || {};
+      var ls = gameData.linescore || {};
       var arrow = ls.inningState === 'Top' ? '\u25b2' : (ls.inningState === 'Bottom' ? '\u25bc' : '');
-      pillText  = (arrow + ' ' + (ls.currentInningOrdinal || '')).trim() || 'Live';
+      pillText = (arrow + ' ' + (ls.currentInningOrdinal || '')).trim() || 'Live';
       liveDotHtml = '<div class="live-dot"></div>';
     }
 
@@ -513,13 +501,13 @@
           '<div class="team-side">' +
             '<div class="team-abbr brewers">MIL</div>' +
             '<div class="team-full">Brewers' + (t.isHome ? ' \u00b7 Home' : ' \u00b7 Away') + '</div>' +
-            (showScores ? '<div class="score-display brewers-score' + (brewWin ? ' winner' : '') + '"> ' + brewScore + '</div>' : '') +
+            (showScores ? '<div class="score-display brewers-score' + (brewWin?' winner':'') + '"> ' + brewScore + '</div>' : '') +
           '</div>' +
           '<div class="score-vs"><div class="vs-sep">' + (showScores ? '' : 'vs') + '</div></div>' +
           '<div class="team-side">' +
             '<div class="team-abbr">' + oppAbbr + '</div>' +
             '<div class="team-full">' + oppName + (t.isHome ? ' \u00b7 Away' : ' \u00b7 Home') + '</div>' +
-            (showScores ? '<div class="score-display' + (oppWin ? ' winner' : '') + '"> ' + oppScore + '</div>' : '') +
+            (showScores ? '<div class="score-display' + (oppWin?' winner':'') + '"> ' + oppScore + '</div>' : '') +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -528,38 +516,28 @@
 
   async function fetchBrewers() {
     var today = todayStr();
-
-    // 1. Today's game — failure shows "No game today", never crashes
     try {
       var res  = await fetch('https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=' + today + '&teamId=' + BREWERS_ID + '&hydrate=team,linescore');
       var data = await res.json();
       var games = (data.dates && data.dates[0] && data.dates[0].games) || [];
       gameData = games.find(function(g) { return g.gameType === 'R'; }) || games[0] || null;
-    } catch(err) {
-      console.warn('[Widget] Game fetch failed:', err);
-      gameData = null;
-    }
+    } catch(err) { console.warn('[Widget] Game fetch failed:', err); gameData = null; }
 
-    // 2. Record + recent results (last 14 days) — always non-fatal
     try {
       var start = dateOffset(today, -30);
-      var r2    = await fetch('https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=' + start + '&endDate=' + today + '&teamId=' + BREWERS_ID + '&gameTypes=R&hydrate=team,linescore');
-      var d2    = await r2.json();
-      var all   = (d2.dates || []).reduce(function(a, d) { return a.concat(d.games || []); }, []);
-      var todayGamePk = gameData && gameData.gamePk;
-      var done  = all.filter(function(g) { return g.status && g.status.abstractGameState === 'Final' && g.gamePk !== todayGamePk; });
+      var r2  = await fetch('https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=' + start + '&endDate=' + today + '&teamId=' + BREWERS_ID + '&gameTypes=R&hydrate=team,linescore');
+      var d2  = await r2.json();
+      var all = (d2.dates || []).reduce(function(a, d) { return a.concat(d.games || []); }, []);
+      var todayPk = gameData && gameData.gamePk;
+      var done = all.filter(function(g) { return g.status && g.status.abstractGameState === 'Final' && g.gamePk !== todayPk; });
       recentGames = done.slice(-3).reverse();
-
       if (done.length > 0) {
         var last = done[done.length - 1];
-        var side = (last.teams && last.teams.home && last.teams.home.team && last.teams.home.team.id === BREWERS_ID)
-          ? last.teams.home : last.teams.away;
-        var rec = side && side.leagueRecord;
+        var side = (last.teams && last.teams.home && last.teams.home.team && last.teams.home.team.id === BREWERS_ID) ? last.teams.home : last.teams.away;
+        var rec  = side && side.leagueRecord;
         if (rec && rec.wins != null) record = { wins: rec.wins, losses: rec.losses, pct: rec.pct || '.000' };
       }
-    } catch(err) {
-      console.warn('[Widget] Schedule fetch failed (non-fatal):', err);
-    }
+    } catch(err) { console.warn('[Widget] Schedule fetch failed:', err); }
 
     renderWidget();
     updateLiveRing();
@@ -568,7 +546,6 @@
   fetchBrewers();
   refreshTimer = setInterval(fetchBrewers, 60000);
 
-  // Click outside to close
   document.addEventListener('click', function(e) {
     var popup = document.getElementById('brew-popup');
     var btn   = document.getElementById('brew-btn');
