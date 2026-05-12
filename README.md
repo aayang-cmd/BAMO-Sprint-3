@@ -193,7 +193,7 @@ This project demonstrates:
 
 ## Aaron Yang, Omar Santibanez, Brandon Taylor-Hughlett
 
-Full-Stack Developer Intern at i.c.stars Milwaukee
+Intern/Residents at i.c.stars Milwaukee
 
 Focused on building API-driven applications, improving workflows through data integration, and creating impactful user experiences through modern web technologies.
 
